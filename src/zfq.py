@@ -40,7 +40,7 @@ def compress(in_path, out_path, skip_check, log):
     try:
         modif_time = os.path.getmtime(in_path)
         # Split fastq components
-        log.info("Split FastQ file components")
+        log.debug("Split FastQ file components")
         with suitableOpen(in_path) as reader:
             with open(os.path.join(tmp_dir, "head.txt"), "w") as writer_head:
                 with open(os.path.join(tmp_dir, "seq.fa"), "w") as writer_seq:
@@ -54,7 +54,7 @@ def compress(in_path, out_path, skip_check, log):
                             writer_qual.write(reader.readline())
                             rec_id = reader.readline()
         # Get info
-        log.info("Store input info")
+        log.debug("Store input info")
         metrics = subprocess.check_output(
             ["wc", "-lm", os.path.join(tmp_dir, "qual.txt")]
         )
@@ -67,8 +67,8 @@ def compress(in_path, out_path, skip_check, log):
                 "mtime": modif_time
             }))
         # Compress sequences
-        log.info("Zstd compress sequences")
-        subprocess.check_output([
+        log.debug("Zstd compress sequences")
+        silentexec([
             "zstd",
             "--no-progress",
             "-18",
@@ -76,23 +76,23 @@ def compress(in_path, out_path, skip_check, log):
         ])
         os.remove(os.path.join(tmp_dir, "seq.fa"))
         # Compress qualities
-        log.info("Zstd compress qualities")
-        subprocess.check_output([
+        log.debug("Zstd compress qualities")
+        silentexec([
             "zstd",
             "--no-progress",
             os.path.join(tmp_dir, "qual.txt")
         ])
         os.remove(os.path.join(tmp_dir, "qual.txt"))
         # Compress headers
-        log.info("Zstd compress headers")
-        subprocess.check_output([
+        log.debug("Zstd compress headers")
+        silentexec([
             "zstd",
             "--no-progress",
             os.path.join(tmp_dir, "head.txt")
         ])
         os.remove(os.path.join(tmp_dir, "head.txt"))
         # Create tar
-        log.info("Create archive")
+        log.debug("Create archive")
         with tarfile.open(out_path, mode="w") as archive:
             # Headers
             archive.add(
@@ -123,7 +123,7 @@ def compress(in_path, out_path, skip_check, log):
         shutil.rmtree(tmp_dir)
     # Test archive consistency
     if not skip_check:
-        log.info("Test file consistency after uncompressing")
+        log.debug("Test file consistency after uncompressing")
         test_file_path = out_path + ".testmd5"
         uncompress(out_path, test_file_path, False, FakeLogger())
         os.remove(test_file_path)
@@ -181,6 +181,24 @@ def isGzip(path):
     return is_gzip
 
 
+class LoggerAction(argparse.Action):
+    """Manages logger level parameters (The value "INFO" becomes logging.info and so on)."""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        log_level = None
+        if values == "DEBUG":
+            log_level = logging.DEBUG
+        elif values == "INFO":
+            log_level = logging.INFO
+        elif values == "WARNING":
+            log_level = logging.WARNING
+        elif values == "ERROR":
+            log_level = logging.ERROR
+        elif values == "CRITICAL":
+            log_level = logging.CRITICAL
+        setattr(namespace, self.dest, log_level)
+
+
 def md5sum(path, chunk_size=8192):
     """
     Return MD5 checksum for the uncompressed file.
@@ -200,6 +218,17 @@ def md5sum(path, chunk_size=8192):
             hashsum.update(chunk)
             chunk = reader.read(chunk_size)
     return hashsum.hexdigest()
+
+
+def silentexec(cmd):
+    """
+    Execute subprocess with check_output and mask stderr.
+
+    :param cmd: Command to execute.
+    :type cmd: list
+    """
+    with open(os.devnull, "w") as writer:
+        subprocess.check_output(cmd, stderr=writer)
 
 
 def suitableOpen(path, mode="r"):
@@ -247,15 +276,15 @@ def uncompress(in_path, out_path, skip_check, log):
     # Process
     try:
         # Extract all
-        log.info("Extract archive in {}".format(tmp_dir))
+        log.debug("Extract archive in {}".format(tmp_dir))
         with tarfile.open(in_path) as archive:
             archive.extractall(tmp_dir)
         # Get info
         with open(os.path.join(tmp_dir, "info.json")) as reader_info:
             in_info = json.load(reader_info)
         # Uncompress sequences
-        log.info("Zstd decompress sequences")
-        subprocess.check_output([
+        log.debug("Zstd decompress sequences")
+        silentexec([
             "zstd",
             "--no-progress",
             "-d",
@@ -263,8 +292,8 @@ def uncompress(in_path, out_path, skip_check, log):
         ])
         os.remove(os.path.join(tmp_dir, "seq.fa.zst"))
         # Uncompress qualities
-        log.info("Zstd decompress qualities")
-        subprocess.check_output([
+        log.debug("Zstd decompress qualities")
+        silentexec([
             "zstd",
             "--no-progress",
             "-d",
@@ -272,8 +301,8 @@ def uncompress(in_path, out_path, skip_check, log):
         ])
         os.remove(os.path.join(tmp_dir, "qual.txt.zst"))
         # Uncompress headers
-        log.info("Zstd decompress IDs")
-        subprocess.check_output([
+        log.debug("Zstd decompress IDs")
+        silentexec([
             "zstd",
             "--no-progress",
             "-d",
@@ -281,7 +310,7 @@ def uncompress(in_path, out_path, skip_check, log):
         ])
         os.remove(os.path.join(tmp_dir, "head.txt.zst"))
         # Write FastQ
-        log.info("Write FastQ")
+        log.debug("Write FastQ")
         with suitableOpen(out_path, "w") as writer_fastq:
             with open(os.path.join(tmp_dir, "head.txt")) as reader_head:
                 with open(os.path.join(tmp_dir, "seq.fa")) as reader_seq:
@@ -296,7 +325,7 @@ def uncompress(in_path, out_path, skip_check, log):
         os.utime(out_path, (in_info["mtime"], in_info["mtime"]))
         # Test consistency
         if not skip_check:
-            log.info("Check consistency from original file")
+            log.debug("Check consistency from original file")
             if in_info["md5"] != md5sum(out_path):
                 raise Exception("Uncompressed file from archive is not identical to original file.")
     finally:
@@ -310,6 +339,7 @@ if __name__ == "__main__":
     sub_parsers = parser.add_subparsers(dest="command")
     compress_parser = sub_parsers.add_parser("compress", help="Compress FastQ file to zfq.")
     compress_parser.add_argument('-i', '--input', required=True, help='Path to raw file (format: FastQ). It can be gzipped.')
+    compress_parser.add_argument('-l', '--logging-level', default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], action=LoggerAction, help='The logger level. [Default: %(default)s]')
     compress_parser.add_argument('-o', '--output', required=True, help='Path to compressed file (format: zfq).')
     compress_parser.add_argument('-r', '--remove', action='store_true', help='Remove input file after process.')
     compress_parser.add_argument('-s', '--skip-check', action='store_true', help='Skip md5sum comparison between original file (before compression) and compressed file after uncompression.')
@@ -317,6 +347,7 @@ if __name__ == "__main__":
     info_parser.add_argument('-i', '--input', required=True, help='Path to compressed file (format: zfq).')
     uncompress_parser = sub_parsers.add_parser("uncompress", help="Uncompress zfq file to FastQ.")
     uncompress_parser.add_argument('-i', '--input', required=True, help='Path to compressed file (format: zfq).')
+    uncompress_parser.add_argument('-l', '--logging-level', default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], action=LoggerAction, help='The logger level. [Default: %(default)s]')
     uncompress_parser.add_argument('-o', '--output', required=True, help='Path to raw file (format: Fastq). It can be gzipped if the file name endswith ".gz".')
     uncompress_parser.add_argument('-r', '--remove', action='store_true', help='Remove input file after process.')
     uncompress_parser.add_argument('-s', '--skip-check', action='store_true', help='Skip md5sum comparison between original file (before compression) and file after uncompress.')
@@ -329,7 +360,7 @@ if __name__ == "__main__":
         # Logger
         logging.basicConfig(format='%(asctime)s -- [%(filename)s][pid:%(process)d][%(levelname)s] -- %(message)s')
         log = logging.getLogger(os.path.basename(__file__))
-        log.setLevel(logging.INFO)
+        log.setLevel(args.logging_level)
         log.info("Command: " + " ".join(sys.argv))
         # Process
         if args.command == "compress":
