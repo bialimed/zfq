@@ -18,7 +18,7 @@ import tarfile
 import uuid
 
 
-def compress(in_path, out_path, skip_check, log):
+def compress(in_path, out_path, skip_check, log, threads=1):
     """
     Compress FastQ file to zfq.
 
@@ -30,6 +30,8 @@ def compress(in_path, out_path, skip_check, log):
     :type skip_check: bool
     :param log: Logger of the script.
     :type log: logging.Logger
+    :param threads: Number of compression threads.
+    :type threads: int
     """
     # Create tmp dir
     dest_dir = os.path.dirname(out_path)
@@ -71,6 +73,7 @@ def compress(in_path, out_path, skip_check, log):
         silentexec([
             "zstd",
             "--no-progress",
+            "-T{}".format(threads),
             "-18",
             os.path.join(tmp_dir, "seq.fa")
         ])
@@ -80,6 +83,7 @@ def compress(in_path, out_path, skip_check, log):
         silentexec([
             "zstd",
             "--no-progress",
+            "-T{}".format(threads),
             os.path.join(tmp_dir, "qual.txt")
         ])
         os.remove(os.path.join(tmp_dir, "qual.txt"))
@@ -88,6 +92,7 @@ def compress(in_path, out_path, skip_check, log):
         silentexec([
             "zstd",
             "--no-progress",
+            "-T{}".format(threads),
             os.path.join(tmp_dir, "head.txt")
         ])
         os.remove(os.path.join(tmp_dir, "head.txt"))
@@ -343,6 +348,7 @@ if __name__ == "__main__":
     compress_parser.add_argument('-o', '--output', required=True, help='Path to compressed file (format: zfq).')
     compress_parser.add_argument('-r', '--remove', action='store_true', help='Remove input file after process.')
     compress_parser.add_argument('-s', '--skip-check', action='store_true', help='Skip md5sum comparison between original file (before compression) and compressed file after uncompression.')
+    compress_parser.add_argument('-t', '--threads', type=int, default=1, help='Number of compression threads. [Default: %(default)s]')
     info_parser = sub_parsers.add_parser("info", help="Return information from sequence file: number of sequences, number of nucleotids and original file md5sum.")
     info_parser.add_argument('-i', '--input', required=True, help='Path to compressed file (format: zfq).')
     uncompress_parser = sub_parsers.add_parser("uncompress", help="Uncompress zfq file to FastQ.")
@@ -364,7 +370,7 @@ if __name__ == "__main__":
         log.info("Command: " + " ".join(sys.argv))
         # Process
         if args.command == "compress":
-            compress(args.input, args.output, args.skip_check, log)
+            compress(args.input, args.output, args.skip_check, log, args.threads)
         else:
             uncompress(args.input, args.output, args.skip_check, log)
         if args.remove:
