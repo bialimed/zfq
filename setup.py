@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 from distutils.core import setup
 import re
+import shutil
+
+
+# Check system dependecy zstd
+if not shutil.which("zstd"):
+    raise Exception("zstd must be installed.")
 
 
 def get_version():
