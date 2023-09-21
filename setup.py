@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from distutils.core import setup
+import os
 import re
 import shutil
 
@@ -10,7 +11,8 @@ if not shutil.which("zstd"):
 
 
 def get_version():
-    with open("src/zfq.py") as reader:
+    app_dir = os.path.dirname(__file__)
+    with open(os.path.join(app_dir, "src", "zfq.py")) as reader:
         for line in reader:
             if line.startswith("__version__"):
                 version = re.search(r"^__version__\s*=\s*\'(.+)\'", line).groups()[0]  # Example: "__version__ = '1.7.0'"
