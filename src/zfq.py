@@ -162,7 +162,7 @@ def info(in_path):
     with tarfile.open(in_path) as archive:
         with archive.extractfile("info.json") as reader_info:
             in_info = json.load(reader_info)
-    print(in_info)
+    print(json.dumps(in_info))
 
 
 def isGzip(path):
