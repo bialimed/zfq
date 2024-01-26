@@ -1,4 +1,4 @@
-# zfq: FastQ file compressor.
+# zfq: FastQ file compressor
 
 ## Table of Contents
 * [Description](#description)
@@ -6,7 +6,6 @@
 * [Installation](#installation)
 * [Usage example](#usage_example)
 * [Copyright](#copyright)
-* [Contact](#contact)
 
 
 ## Description
@@ -19,19 +18,17 @@ zfq is a **lossless** compression/uncompression wrapper for FastQ files.
   character limit in sequences headers or qualities).
   * Without reference genome.
 * Robust:
-  * Wrapp a standard software (zstd) well maintained and tested.
-  * Decompression result is automaticly tested after each compression.
-  * md5sum of the original file is stored to be automaticly tested after each
+  * Wraps a standard software (zstd) well maintained and tested.
+  * Decompression result is automatically tested after each compression.
+  * md5sum of the original file is stored to be automatically tested after each
   decompression.
-  * No fail on benchmark dataset composed by 722 files from Illumina and PacBio
-  instruments.
-* Performant:
-  * Compression rate:
-    * is better than standard text compression (up to 2 times better than gzip
-    best). 
-    * is less than specialised software (*************************) but it can work on all fastq and
-    here are no nasty surprises on decompression.
-  * compression/decompression time and compression ratio ********************************
+  * No fail on benchmark dataset composed by 645 files from Element Biosciences,
+  Illumina and PacBio instruments.
+* Performance:
+  * Compression rate is better than widely used gzip (up to 2 times better than
+  gzip best), similar to zstd in mode ultra and lower than sequences compression
+  algorithms like quip (up to half as good).
+  * Compression/decompression time ********************************
 * Userfriendly:
   * gzipped fastq can be directly take as input or write as output.
   * `zfq info` instantly provide the number of sequences and nucleotids stored
@@ -69,19 +66,35 @@ Decompress:
 * Sequences compression:
   * lfastqc (https://github.uconn.edu/sya12005/LFastqC)
   * lfqc (https://github.com/mariusmni/lfqc)
-  * picard (https://broadinstitute.github.io/picard/command-line-overview.html) to convert as uBAM
+  * picard (https://broadinstitute.github.io/picard/command-line-overview.html)
+  to convert as uBAM
   * quip (https://github.com/dcjones/quip)
   * zfq
 
 ### Dataset
 
- * 722 files
- * Sequencers types: Illumina (MiSeq, NextSeq and NovaSeq) and PacBio (Sequel 2)
+ * 645 files
+ * Sequencers types: Element Biosciences (AVITI), Illumina (MiSeq, NextSeq
+ and NovaSeq) and PacBio (Sequel 2)
  * Library: amplicon, capture and whole
  * Matrix: DNA, ctDNA and RNA
+ * Species: Homo sapiens and sevreal virus
 
 ### Results
-************************************
+#### Compression rate and time
+Compression rate************
+Compression time************
+
+#### Decompression time
+Decompression time************
+
+#### Error rate 
+
+* Sequences compression algorithms failed to compression and decompress several
+files in dataset. This is due to memory requirement (> 200G) or limited quality
+range. More worryingly, some compressions were carried out without any apparent
+error, and decompression was not possible because the file was invalid.
+* Text compression algorithms can convert every type of fastq.
 
 
 ## Installation
@@ -103,15 +116,16 @@ python -m pip install git+https://github.com/bialimed/zfq.git@1.0.0
 
 ### Compress fastq(.gz) file:
 Command:
-`zfq.py compress -i SRR.fastq.gz -o SRR.fastq.zfq -r`
+`zfq.py compress -t 2 -i SRR.fastq.gz -o SRR.fastq.zfq -r`
 
-Option:
-In this example `-r/--remove` is used to remove zfq file after decompression. 
+Options in example:
+  * `-r/--remove` is used to remove zfq file after decompression. 
+  * `-t/--threads` number of compression threads. 
 
-STDOUT:
+STDERR:
 ```
 zfq.py compress -i SRR.fastq.gz -o SRR.fastq.zfq
-2023-09-05 11:48:20,483 -- [zfq.py][pid:3163205][INFO] -- Command: zfq.py compress -i SRR.fastq.gz -o SRR.fastq.zfq
+2023-09-05 11:48:20,483 -- [zfq.py][pid:3163205][INFO] -- Command: zfq.py compress -t 2 -i SRR.fastq.gz -o SRR.fastq.zfq
 2023-09-05 11:48:21,341 -- [zfq.py][pid:3163205][INFO] -- End of job
 ```
 
@@ -121,17 +135,17 @@ Command:
 
 STDOUT:
 ```
-{'seq': 14615, 'nt': 1865822, 'md5': 'c1f5e805b3a076d5c58fa206f2c30ac5', 'mtime': 1693907258.333263}
+{"seq": 14615, "nt": 1865822, "md5": "c1f5e805b3a076d5c58fa206f2c30ac5", "mtime": 1693907258.333263}
 ```
 
 ### Convert zfq to fastq.gz
 Command:
 `zfq.py uncompress -i SRR.fastq.zfq -o SRR2.fastq.gz -r`
 
-Option:
-In this example `-r/--remove` is used to remove zfq file after decompression. 
+Option in example:
+  * `-r/--remove` is used to remove zfq file after decompression. 
 
-STDOUT:
+STDERR:
 ```
 2023-09-05 11:55:42,348 -- [zfq.py][pid:3164218][INFO] -- Command: zfq.py uncompress -i SRR.fastq.zfq -o SRR2.fastq.gz -r
 2023-09-05 11:55:44,066 -- [zfq.py][pid:3164218][INFO] -- End of job
@@ -139,5 +153,4 @@ STDOUT:
 
 
 ## Copyright
-2023 Laboratoire d'Anatomo-Cytopathologie de l'Institut Universitaire du Cancer
-Toulouse - Oncopole
+2023 CHU Toulouse

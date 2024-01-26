@@ -3,7 +3,7 @@
 __author__ = 'Frederic Escudie'
 __copyright__ = 'Copyright (C) 2023 CHU Toulouse'
 __license__ = 'GNU General Public License'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 import argparse
 import csv
@@ -181,9 +181,13 @@ if __name__ == "__main__":
                 if not os.path.exists(args.working_dir):
                     os.makedirs(args.working_dir)
                 tmp_file = os.path.join(args.working_dir, os.path.basename(file))
-                shutil.copyfile(file, tmp_file)
-                ini_path = tmp_file[:-3]
-                subprocess.check_call(["gzip", "-d", tmp_file])
+                if file.endswith(".gz"):
+                    shutil.copyfile(file, tmp_file)
+                    ini_path = tmp_file[:-3]
+                    subprocess.check_call(["gzip", "-d", tmp_file])
+                else:
+                    ini_path = tmp_file[:-4]
+                    subprocess.check_call(["zfq.py", "uncompress", "-i", file, "-o", ini_path])
                 expected_hash = md5sum(ini_path, chunk_size=8192)
                 for algo in algorithms:
                     log.info("Porcess with soft {}.".format(algo["soft"]))

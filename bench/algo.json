@@ -1,0 +1,52 @@
+[
+    {
+        "soft": "gzip",
+        "compress_cmd": "gzip #IN# && mv #IN#.gz #OUT#",
+        "decompress_cmd": "mv #IN# #IN#.gz && gzip -d #IN# && mv #IN# #OUT#"
+    },
+    {
+        "soft": "gzip",
+        "compress_cmd": "gzip --best #IN# && mv #IN#.gz #OUT#",
+        "decompress_cmd": "mv #IN# #IN#.gz && gzip -d #IN# && mv #IN# #OUT#"
+    },
+    {
+        "soft": "lfastqc",
+        "compress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw /labos/Anapath/analysis/compression/lfastqc.sif /bin/bash -c 'cd /home/LFastqC-master && python2 /home/LFastqC-master/compress.py #IN# `dirname #OUT#`/tmp && mv `dirname #OUT#`/tmp/`basename #IN# | rev | cut -c 7- | rev`.LFastqC #OUT# && rm -r `dirname #OUT#`/tmp'",
+        "decompress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw /labos/Anapath/analysis/compression/lfastqc.sif /bin/bash -c 'cd /home/LFastqC-master && mv #IN# `dirname #IN#`/tmp_in.LFastqC && python2 /home/LFastqC-master/decompress.py  `dirname #IN#`/tmp_in.LFastqC `dirname #OUT#`/tmp && mv `dirname #OUT#`/tmp/tmp_in.fastq #OUT#'"
+    },
+    {
+        "soft": "lfqc",
+        "compress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw /labos/Anapath/analysis/compression/lfqc.sif /bin/bash -c 'ruby /home/lfqc-master/lfqc/lfqc.rb #IN# && mv #IN#.lfqc #OUT#'",
+        "decompress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw /labos/Anapath/analysis/compression/lfqc.sif /bin/bash -c 'ruby /home/lfqc-master/lfqc/lfqcd.rb #IN# #OUT#'"
+    },
+    {
+        "soft": "mzfq",
+        "compress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw --bind /usr/bin/zstd:/usr/bin/zstd:ro /labos/Anapath/analysis/compression/lfastqc.sif /bin/bash -c 'cd /home/LFastqC-master && python2 /labos/Anapath/analysis/compression2/mzfq.py compress -i #IN# -o #OUT#'",
+        "decompress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw --bind /usr/bin/zstd:/usr/bin/zstd:ro /labos/Anapath/analysis/compression/lfastqc.sif /bin/bash -c 'cd /home/LFastqC-master && python2 /labos/Anapath/analysis/compression2/mzfq.py uncompress -i #IN# -o #OUT#'"
+    },
+    {
+        "soft": "quip",
+        "compress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw /labos/Anapath/analysis/compression/quip.sif /bin/bash -c 'quip #IN# && mv #IN#.qp #OUT#'",
+        "decompress_cmd": "singularity exec --containall --bind /labos/Anapath:/labos/Anapath:rw /labos/Anapath/analysis/compression/quip.sif /bin/bash -c 'mv #IN# #IN#.qp && quip #IN#.qp && mv #IN# #OUT# && rm #IN#.qp'"
+    },
+    {
+        "soft": "ubam",
+        "compress_cmd": "source /labos/Anapath/soft/conda/current/bin/activate caba457d920c5e6c4ff8c898a0db4b8f && picard FastqToSam  SAMPLE_NAME=spl FASTQ=#IN# OUTPUT=#OUT# && conda deactivate",
+        "decompress_cmd": "source /labos/Anapath/soft/conda/current/bin/activate caba457d920c5e6c4ff8c898a0db4b8f && picard SamToFastq INPUT=#IN# FASTQ=#OUT# && conda deactivate"
+    },
+    {
+        "soft": "zfq",
+        "compress_cmd": "/labos/Anapath/analysis/compression2/zfq.py compress -i #IN# -o #OUT#",
+        "decompress_cmd": "/labos/Anapath/analysis/compression2/zfq.py uncompress -i #IN# -o #OUT#"
+    },
+    {
+        "soft": "zstd",
+        "compress_cmd": "zstd --ultra -22 #IN# -o #OUT#",
+        "decompress_cmd": "zstd -d #IN# -o #OUT#"
+    },
+    {
+        "soft": "zstd",
+        "compress_cmd": "zstd -13 #IN# -o #OUT#",
+        "decompress_cmd": "zstd -d #IN# -o #OUT#"
+    }
+]
