@@ -19,19 +19,19 @@ zfq is a **lossless** compression/uncompression wrapper for FastQ files.
   character limit in sequences headers or qualities).
   * Without reference genome.
 * Robust:
-  * Wraps a standard software (zstd) well maintained and tested.
+  * Wraps well maintained and tested standard software: zstd.
   * Decompression result is automatically tested after each compression.
   * md5sum of the original file is stored to be automatically tested after each
   decompression.
-  * No fail on benchmark dataset composed by 645 files from Element Biosciences,
+  * No failures on the benchmark dataset of 645 files from Element Biosciences,
   Illumina and PacBio instruments.
 * Efficient:
   * Compression rate is better than widely used gzip (up to 2 times better than
-  gzip best), similar to zstd in mode ultra and lower than sequences compression
-  algorithms like quip (up to half as good).
+  gzip best), similar to zstd in ultra mode and lower than sequence compression
+  algorithms like quip (up to half).
 * Userfriendly:
-  * gzipped fastq can be directly take as input or write as output.
-  * `zfq info` instantly provide the number of sequences and nucleotids stored
+  * gzipped fastq can be directly take as input or written to output.
+  * `zfq info` instantly provides the number of sequences and nucleotids stored
   in the file.
 
 
@@ -89,19 +89,19 @@ STDERR:
 
 Compress:
 
-  1. Write number of reads, nucleotids, modification time and original md5sum
+  1. Write number of reads, nucleotides, modification time and original md5sum
   in info file.
-  2. Split FastQ three parts: headers, sequences (without new line) and qualities.
+  2. Split FastQ into three parts: headers, sequences (no new line) and qualities.
   3. Compress each part with zstd.
-  4. Store all compressed files and input info in tar archive.
-  5. Apply original modification time to archive.
-  6. Decompress file in temporary file to compare md5sum of the original file
-  and decompressed file.
+  4. Store all compressed files and input info in a tar archive.
+  5. Apply the original modification time to archive.
+  6. Decompress the file into a temporary file to compare md5sum of the original
+  file and decompressed file.
 
 Decompress:
   1. Extract files.
   2. Decompress with zstd.
-  3. Merge each parts (sequences are splitted using quality length).
+  3. Merge each part (sequences are splitted according to quality length).
   4. Apply original modification time to decompressed file.
   5. Compare md5sum of the original file (from info file) and decompressed file.
 
@@ -134,18 +134,23 @@ Decompress:
 
 ### Results
 #### Compression rate and time
-* Compression rate is better than widely used gzip (up to 2 times better than
-gzip best), similar to zstd in mode ultra and lower than sequences compression
-algorithms like quip (up to half as good).
+![compression rate](bench/res/1.0.0/size_rate.png)
+* Compression rate better than widely used gzip (up to 2 times better than gzip
+best), similar to zstd in ultra mode and lower than sequence compression
+algorithms like quip (up to half).
+
+![compression time](bench/res/1.0.0/compress_time.png)
 * Compression faster than zstd ultra and lfqc, similar to gzip best and slower
 than quip.
 
 #### Decompression time
+![decompression time](bench/res/1.0.0/decompress_time.png)
 Faster than ubam, quip, lfastqc and lfqc and slower than gzip, and others.
 
-#### Error rate 
-* Sequences compression algorithms failed to compress or decompress several
-files in dataset. This is due to memory requirement (> 200G) or limited quality
+#### Error rate
+![errors count](bench/res/1.0.0/errors_count.png)
+* Sequence compression algorithms failed to compress or decompress several files
+in the dataset. This was due to memory requirements (> 200G) or limited quality
 range. This was very problematic in cases where compression was performed without
 apparent error and decompression was not possible because the file was invalid.
 * Text compression algorithms can convert every type of fastq.
